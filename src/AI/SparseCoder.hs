@@ -12,6 +12,8 @@ import Data.Packed.Vector
 import Numeric.Container
 import System.Random
 
+import Debug.Trace
+
 type ActivationFunction = (Double -> Double)
 
 data SparseCoder = SparseCoder {
@@ -23,7 +25,7 @@ data SparseCoder = SparseCoder {
 
 create :: Int -> Int -> ActivationFunction -> ActivationFunction -> SparseCoder
 create input hidden f f' = SparseCoder (randomMatrix hidden (input+1)) (randomMatrix input (hidden+1)) f f'
-  where randomMatrix x y = (x><y) $ randomRs (-0.02,0.02) (mkStdGen 0)
+  where randomMatrix x y = (x><y) $ randomRs (-0.01,0.01) (mkStdGen 0)
 
 -- Evaluate ANN layers pre-activation function given input vector.
 evalWithLayers :: SparseCoder -> Vector Double -> (Vector Double, Vector Double)
@@ -56,6 +58,8 @@ squaredError sc xs = squaredError' sc xs 0.0 where
     let ie = instanceError sc x
     in squaredError' sc xs (e + dot ie ie)
 
+d_dim m = (rows m, cols m)
+
 -- Train network based on single example.
 trainOnce :: SparseCoder -> Vector Double -> SparseCoder
 trainOnce sc x =
@@ -65,17 +69,18 @@ trainOnce sc x =
       w_o = outputLayer sc
       w_h = hiddenLayer sc
       (z_h, z_o) = evalWithLayers sc x
-      a_i = augment x
+      a_i = x
       a_h = mapVector f z_h
       a_o = mapVector f z_o
-      ie =  x `sub` a_o -- optimization, could have used instanceError
+      --ie =  x `sub` a_o -- optimization, could have used instanceError
+      ie =  a_o `sub` x -- optimization, could have used instanceError
       d_o = ie `mul` (mapVector f' z_o)
-      d_h = (trans w_o `mXv` d_o) `mul` (augment $ mapVector f' z_h)
+      d_h = (deaugment $ (trans w_o `mXv` d_o)) `mul` (mapVector f' z_h)
       --deltaW_o = (scale alpha $ diag d_o) `mXm` w_o
       deltaW_o = asColumn d_o `mXm` (asRow $ augment a_h)
       --deltaW_h = (scale alpha $ diag $ deaugment d_h) `mXm` w_h
-      deltaW_h =  asColumn (deaugment d_h) `mXm` (asRow a_i)
-  in SparseCoder (w_h `add` deltaW_h) (w_o `add` deltaW_o) f f'
+      deltaW_h =  (asColumn d_h) `mXm` (asRow $ augment a_i)
+  in SparseCoder (w_h `sub` (scale alpha deltaW_h)) (w_o `sub` (scale alpha deltaW_o)) f f'
 
 -- Train network based on many examples.
 train :: SparseCoder -> [Vector Double] -> SparseCoder

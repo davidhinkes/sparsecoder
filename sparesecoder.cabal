@@ -13,5 +13,6 @@ library
 
 executable test
   main-is: test.hs
+  build-depends: hsmagick > 0, MissingH > 0, haskell98 > 0, random >= 0
   hs-source-dirs: test src
   --ghc-options: -prof -O2 -auto-all -caf-all -fforce-recomp
