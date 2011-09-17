@@ -9,10 +9,10 @@ library
   build-depends: base >=4, hmatrix >= 0.11, random >= 0
   hs-source-dirs: src
   exposed-modules: AI.SparseCoder
-  --ghc-options: -prof -O2 -auto-all -caf-all -fforce-recomp
+  ghc-options: -O2 -Wall
 
 executable test
   main-is: test.hs
-  build-depends: hsmagick > 0, MissingH > 0, haskell98 > 0, random >= 0
+  build-depends: bytestring-lexing > 0, bytestring > 0, hsmagick > 0, MissingH > 0, haskell98 > 0, random >= 0
   hs-source-dirs: test src
-  --ghc-options: -prof -O2 -auto-all -caf-all -fforce-recomp
+  ghc-options: -O2 -Wall
